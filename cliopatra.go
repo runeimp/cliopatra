@@ -625,9 +625,9 @@ type Parameter struct {
 	Description     string   // The long description to display to the user
 	envDefault      string   // Environment variable to use as a default value if the parameter is not present on the command line
 	help            string   // The help information to display to the user
-	Index           int      // The actual index on the command line. Default: 0 (equals not set as the zeroth position is the command itself)
+	Index           int      // The actual index on the command line. Default: 0 (equates to "not set" as the zeroth position is the command itself)
 	IsRequired      bool     // Defines if this parameter is required on the command line
-	Key             string   // The logical name of the parameter used in the Parameters map
+	Key             string   // The key used in the Parameters map
 	MetaVar         string   // The variable reference name used in example usage
 	Name            []string // The command line name(s) allowed
 	Position        uint     // Is the arguments position fixed. Useful for subcommands and many tools. Default: 0 (position not fixed)
@@ -635,7 +635,7 @@ type Parameter struct {
 	Suffix          []string // List of allowed parameter suffixes. Mostly used for arguments. Though occasionally used for options/flags.
 	Summery         string   // The short description to display to the user
 	value           string   // The actual value of the parameter given
-	valueRequired   bool     // Defines if this parameter's value is required
+	valueRequired   bool     // Defines if this parameter's value is required when the parameter is used
 	valueSet        bool     // The flag was set or actual value of the parameter was given
 }
 

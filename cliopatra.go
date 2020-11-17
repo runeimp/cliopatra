@@ -628,6 +628,7 @@ type Parameter struct {
 	Index           int      // The actual index on the command line. Default: 0 (equals not set as the zeroth position is the command itself)
 	IsRequired      bool     // Defines if this parameter is required on the command line
 	Key             string   // The logical name of the parameter used in the Parameters map
+	MetaVar         string   // The variable reference name used in example usage
 	Name            []string // The command line name(s) allowed
 	Position        uint     // Is the arguments position fixed. Useful for subcommands and many tools. Default: 0 (position not fixed)
 	Prefix          []string // List of allowed parameter prefixes. Mostly used for options/flags. Though occasionally used for arguments.

@@ -113,22 +113,17 @@ type CommandLineParameter interface {
 
 // CommandSet is the data type for command line subcommand
 type CommandSet struct {
-	AllowPosixGroups bool   // Allow POSIX option groups?
-	Description      string // The long description to display to the user
-	Help             string // The help information to display to the user
-	IsGNU            bool   // Does the parameter conform to the GNU specification
-	IsMultics        bool   // Does the parameter conform to the Multics specification
-	IsPosix          bool   // Does the parameter conform to the POSIX specification
-	IsRuneImp        bool   // Does the parameter conform to the RuneImp specification
-	Name             string // The name of the command set
+	Parameter
+	AllowPosixGroups bool // Allow POSIX option groups?
+	IsGNU            bool // Does the parameter conform to the GNU specification
+	IsMultics        bool // Does the parameter conform to the Multics specification
+	IsPosix          bool // Does the parameter conform to the POSIX specification
+	IsRuneImp        bool // Does the parameter conform to the RuneImp specification
 	Parameters       map[string]CommandLineParameter
-	Prefix           []string // List of allowed parameter prefixes. Mostly used for options/flags. Though occasionally used for arguments.
-	Suffix           []string // List of allowed parameter suffixes. Mostly used for arguments. Though occasionally used for options/flags.
-	Summery          string   // The short description to display to the user
 }
 
-// AddFlag defines a flag parameter for a command set
-func (cs CommandSet) AddFlag(key string, name []string, prefix *[]string, help string) {
+// AddArgument defines a subcommand set to a command set
+func (cs CommandSet) AddArgument(key string, help string) {
 	p := cs.Prefix
 	if prefix != nil && len(*prefix) > 0 {
 		p = *prefix
@@ -136,11 +131,64 @@ func (cs CommandSet) AddFlag(key string, name []string, prefix *[]string, help s
 
 	cs.Parameters[key] = &Flag{
 		Parameter: Parameter{
-			help:   help,
-			Name:   name,
-			Prefix: p,
+			help:      help,
+			Name:      name,
+			Prefix:    "",
+			valueType: "bool",
 		},
-		defaultValue: false,
+	}
+}
+
+// AddCommand defines a subcommand set to a command set
+func (cs CommandSet) AddCommand(key string, name []string, help string, prefix *[]string) {
+	p := cs.Prefix
+	if prefix != nil && len(*prefix) > 0 {
+		p = *prefix
+	}
+
+	cs.Parameters[key] = &Flag{
+		Parameter: Parameter{
+			help:      help,
+			Name:      name,
+			Prefix:    "",
+			valueType: "bool",
+		},
+	}
+}
+
+// AddFlag defines a flag parameter for a command set
+func (cs CommandSet) AddFlag(key string, name []string, help string, prefix *[]string) {
+	p := cs.Prefix
+	if prefix != nil && len(*prefix) > 0 {
+		p = *prefix
+	}
+
+	cs.Parameters[key] = &Flag{
+		Parameter: Parameter{
+			help:      help,
+			Name:      name,
+			Prefix:    p,
+			valueType: "bool",
+		},
+		valueDefault: false,
+	}
+}
+
+// AddOption defines an option parameter for a command set
+func (cs CommandSet) AddOption(key string, name []string, help string, valueType string, valueDefault string, prefix *[]string) {
+	p := cs.Prefix
+	if prefix != nil && len(*prefix) > 0 {
+		p = *prefix
+	}
+
+	cs.Parameters[key] = &Option{
+		Parameter: Parameter{
+			help:      help,
+			Name:      name,
+			Prefix:    p,
+			valueType: valueType,
+		},
+		valueDefault: valueDefault,
 	}
 }
 
@@ -242,7 +290,7 @@ func (cs *CommandSet) SetRuneImp(v bool) {
 // Argument is the data type for command line arguments
 type Argument struct {
 	Parameter
-	defaultValue string // The default value to use if one is not given on the command line
+	valueDefault string // The default value to use if the parameter is not used on the command line
 }
 
 // GetFlag returns the current boolean value for the parameter
@@ -364,7 +412,7 @@ func (a *Argument) SetValue(s string) {
 // Flag is the data type for command line flags
 type Flag struct {
 	Parameter
-	defaultValue bool // The default value to use if one is not given on the command line. Default: false
+	valueDefault bool // The default value to use if the parameter is not used on the command line. Default: false
 	flagValue    bool // The actual value of the parameter given
 }
 
@@ -373,10 +421,10 @@ func (f *Flag) GetFlag() bool {
 	return f.flagValue
 }
 
-// GetHelp returns the help info for the parameter
-func (f *Flag) GetHelp() string {
-	return f.Parameter.help
-}
+// // GetHelp returns the help info for the parameter
+// func (f *Flag) GetHelp() string {
+// 	return f.Parameter.help
+// }
 
 // GetInt returns the value as a system integer
 func (f *Flag) GetInt() (int, error) {
@@ -386,10 +434,10 @@ func (f *Flag) GetInt() (int, error) {
 	return 0, nil
 }
 
-// GetName returns the parameters names available on the command line
-func (f *Flag) GetName() []string {
-	return f.Parameter.Name
-}
+// // GetName returns the parameters names available on the command line
+// func (f *Flag) GetName() []string {
+// 	return f.Parameter.Name
+// }
 
 // GetNumber returns the value as a float64
 func (f *Flag) GetNumber() (float64, error) {
@@ -399,10 +447,10 @@ func (f *Flag) GetNumber() (float64, error) {
 	return 0.0, nil
 }
 
-// GetPrefix returns the valid values for to prefix the parameter names
-func (f *Flag) GetPrefix() []string {
-	return f.Parameter.Prefix
-}
+// // GetPrefix returns the valid values for to prefix the parameter names
+// func (f *Flag) GetPrefix() []string {
+// 	return f.Parameter.Prefix
+// }
 
 // GetUint returns the value as a system unsigned integer
 func (f *Flag) GetUint() (uint, error) {
@@ -450,172 +498,172 @@ func (f *Flag) SetFlag() {
 	log.Printf("Flag.SetFlag() | f.GetFlag() = %t\n", f.GetFlag())
 }
 
-// SetKey defines the key name to reference in code
-func (f *Flag) SetKey(s string) error {
-	if len(s) == 0 {
-		return errors.New(ErrorKeyLengthZero)
-	}
-	f.Key = s
-	return nil
-}
+// // SetKey defines the key name to reference in code
+// func (f *Flag) SetKey(s string) error {
+// 	if len(s) == 0 {
+// 		return errors.New(ErrorKeyLengthZero)
+// 	}
+// 	f.Key = s
+// 	return nil
+// }
 
-// SetName defines the parameter name(s) allowed on the command line
-func (f *Flag) SetName(s []string) error {
-	for _, v := range s {
-		name := strings.TrimSpace(v)
-		if len(name) == 0 {
-			return errors.New(ErrorNameLengthZero)
-		}
-	}
+// // SetName defines the parameter name(s) allowed on the command line
+// func (f *Flag) SetName(s []string) error {
+// 	for _, v := range s {
+// 		name := strings.TrimSpace(v)
+// 		if len(name) == 0 {
+// 			return errors.New(ErrorNameLengthZero)
+// 		}
+// 	}
 
-	f.Name = s
-	return nil
-}
+// 	f.Name = s
+// 	return nil
+// }
 
-// SetPrefix allows for alternate or custom prefixes to be used. Default prefix is a hyphen.
-func (f *Flag) SetPrefix(list []string, appendToList bool) {
-	if appendToList {
-		for _, v := range list {
-			f.Prefix = append(f.Prefix, v)
-		}
-	} else {
-		f.Prefix = list
-	}
-}
+// // SetPrefix allows for alternate or custom prefixes to be used. Default prefix is a hyphen.
+// func (f *Flag) SetPrefix(list []string, appendToList bool) {
+// 	if appendToList {
+// 		for _, v := range list {
+// 			f.Prefix = append(f.Prefix, v)
+// 		}
+// 	} else {
+// 		f.Prefix = list
+// 	}
+// }
 
-// SetRequired defines the parameter as required input. Errors if not present on the command line.
-func (f *Flag) SetRequired(b bool) {
-	f.IsRequired = b
-}
+// // SetRequired defines the parameter as required input. Errors if not present on the command line.
+// func (f *Flag) SetRequired(b bool) {
+// 	f.IsRequired = b
+// }
 
 // SetValue defines the command line value given
 func (f *Flag) SetValue(s string) {
 	log.Printf("Flag.SetValue() | %q\n", s)
 	f.flagValue = truthyString(s)
-	f.value = s
-	f.valueSet = true
+	f.Parameter.value = s
+	f.Parameter.valueSet = true
 }
 
 // Option is the data type for command line options
 type Option struct {
 	Parameter
-	defaultValue string // The default value to use if one is not given on the command line
+	valueDefault string // The default value to use if the parameter is not used on the command line
 }
 
-// GetFlag returns the current boolean value for the parameter
-func (o *Option) GetFlag() bool {
-	s, err := o.GetValue()
-	if err != nil {
-		return false
-	}
-	return truthyString(s)
-}
+// // GetFlag returns the current boolean value for the parameter
+// func (o *Option) GetFlag() bool {
+// 	s, err := o.GetValue()
+// 	if err != nil {
+// 		return false
+// 	}
+// 	return truthyString(s)
+// }
 
-// GetHelp returns the help info for the parameter
-func (o *Option) GetHelp() string {
-	return o.Parameter.help
-}
+// // GetHelp returns the help info for the parameter
+// func (o *Option) GetHelp() string {
+// 	return o.Parameter.help
+// }
 
-// GetInt returns the value as a system integer
-func (o *Option) GetInt() (int, error) {
-	i, err := strconv.Atoi(o.Parameter.value)
-	return i, err
-}
+// // GetInt returns the value as a system integer
+// func (o *Option) GetInt() (int, error) {
+// 	i, err := strconv.Atoi(o.Parameter.value)
+// 	return i, err
+// }
 
-// GetName returns the parameters names available on the command line
-func (o *Option) GetName() []string {
-	return o.Parameter.Name
-}
+// // GetName returns the parameters names available on the command line
+// func (o *Option) GetName() []string {
+// 	return o.Parameter.Name
+// }
 
-// GetNumber returns the value as a float64
-func (o *Option) GetNumber() (float64, error) {
-	i, err := strconv.ParseFloat(o.Parameter.value, 64)
-	return i, err
-}
+// // GetNumber returns the value as a float64
+// func (o *Option) GetNumber() (float64, error) {
+// 	i, err := strconv.ParseFloat(o.Parameter.value, 64)
+// 	return i, err
+// }
 
-// GetPrefix returns the valid values for to prefix the parameter names
-func (o *Option) GetPrefix() []string {
-	return o.Parameter.Prefix
-}
+// // GetPrefix returns the valid values for to prefix the parameter names
+// func (o *Option) GetPrefix() []string {
+// 	return o.Parameter.Prefix
+// }
 
-// GetUint returns the value as a system unsigned integer
-func (o *Option) GetUint() (uint, error) {
-	i, err := strconv.ParseUint(o.Parameter.value, 10, intSize)
-	// ui := uint(i)
-	return uint(i), err
-}
+// // GetUint returns the value as a system unsigned integer
+// func (o *Option) GetUint() (uint, error) {
+// 	i, err := strconv.ParseUint(o.Parameter.value, 10, intSize)
+// 	// ui := uint(i)
+// 	return uint(i), err
+// }
 
-// GetValue returns the current value for the parameter
-func (o *Option) GetValue() (string, error) {
-	if o.valueSet == false {
-		if o.defaultSet {
-			if o.configPreferred && len(o.configDefault) > 0 {
-				o.value = o.configDefault
-			} else if len(o.envDefault) > 0 {
-				o.value = o.envDefault
-			} else {
-				o.value = o.configDefault
-			}
-		} else {
-			return "", errors.New(ErrorOptionMissing)
-		}
-	}
-	return o.value, nil
-}
+// // GetValue returns the current value for the parameter
+// func (o *Option) GetValue() (string, error) {
+// 	if o.valueSet == false {
+// 		if o.defaultSet {
+// 			if o.configPreferred && len(o.configDefault) > 0 {
+// 				o.value = o.configDefault
+// 			} else if len(o.envDefault) > 0 {
+// 				o.value = o.envDefault
+// 			} else {
+// 				o.value = o.configDefault
+// 			}
+// 		} else {
+// 			return "", errors.New(ErrorOptionMissing)
+// 		}
+// 	}
+// 	return o.value, nil
+// }
 
-// SetDefault defines the default value to use if there is no value given on the command line and no environment or config variable default found
-func (o *Option) SetDefault(s string) error {
-	o.value = s
-	return nil
-}
+// // SetDefault defines the default value to use if there is no value given on the command line and no environment or config variable default found
+// func (o *Option) SetDefault(s string) error {
+// 	o.valueDefault = s
+// 	return nil
+// }
 
-// SetFlag is a NO-OP that will panic for this parameter type
-func (o *Option) SetFlag() {
-	panic("SetFlag use not appropriate for this parameter type")
-}
+// // SetFlag is a NO-OP that will panic for this parameter type
+// func (o *Option) SetFlag() {
+// 	panic("SetFlag use not appropriate for this parameter type")
+// }
 
-// SetKey defines the key name to reference in code
-func (o *Option) SetKey(s string) error {
-	if len(s) == 0 {
-		return errors.New(ErrorKeyLengthZero)
-	}
-	o.Key = s
-	return nil
-}
+// // SetKey defines the key name to reference in code
+// func (o *Option) SetKey(s string) error {
+// 	if len(s) == 0 {
+// 		return errors.New(ErrorKeyLengthZero)
+// 	}
+// 	o.Key = s
+// 	return nil
+// }
 
-// SetPrefix allows for alternate or custom prefixes to be used. Default prefix is a hyphen.
-func (o *Option) SetPrefix(list []string, appendToList bool) {
-	if appendToList {
-		for _, v := range list {
-			o.Prefix = append(o.Prefix, v)
-		}
-	} else {
-		o.Prefix = list
-	}
-}
+// // SetPrefix allows for alternate or custom prefixes to be used. Default prefix is a hyphen.
+// func (o *Option) SetPrefix(list []string, appendToList bool) {
+// 	if appendToList {
+// 		for _, v := range list {
+// 			o.Prefix = append(o.Prefix, v)
+// 		}
+// 	} else {
+// 		o.Prefix = list
+// 	}
+// }
 
-// SetName defines the parameter name(s) allowed on the command line
-func (o *Option) SetName(s []string) error {
-	for _, v := range s {
-		name := strings.TrimSpace(v)
-		if len(name) == 0 {
-			return errors.New(ErrorNameLengthZero)
-		}
-	}
-	o.Name = s
-	return nil
-}
+// // SetName defines the parameter name(s) allowed on the command line
+// func (o *Option) SetName(s []string) error {
+// 	for _, v := range s {
+// 		name := strings.TrimSpace(v)
+// 		if len(name) == 0 {
+// 			return errors.New(ErrorNameLengthZero)
+// 		}
+// 	}
+// 	o.Name = s
+// 	return nil
+// }
 
-// SetValue defines the command line value given
-func (o *Option) SetValue(s string) {
-	o.value = s
-	o.valueSet = true
-}
+// // SetValue defines the command line value given
+// func (o *Option) SetValue(s string) {
+// 	o.value = s
+// 	o.valueSet = true
+// }
 
-// SetRequired defines the parameter as required input. Errors if not present on the command line.
-func (o *Option) SetRequired(b bool) {
-	o.IsRequired = b
-}
+// // SetRequired defines the parameter as required input. Errors if not present on the command line.
+// func (o *Option) SetRequired(b bool) {
+// 	o.IsRequired = b
+// }
 
 // Parameter is the data type for all options and arguments
 type Parameter struct {
@@ -630,13 +678,139 @@ type Parameter struct {
 	Key             string   // The key used in the Parameters map
 	MetaVar         string   // The variable reference name used in example usage
 	Name            []string // The command line name(s) allowed
-	Position        uint     // Is the arguments position fixed. Useful for subcommands and many tools. Default: 0 (position not fixed)
+	Position        uint     // Is the arguments position fixed? Useful for subcommands and arguments. Default: 0 (position not fixed)
 	Prefix          []string // List of allowed parameter prefixes. Mostly used for options/flags. Though occasionally used for arguments.
-	Suffix          []string // List of allowed parameter suffixes. Mostly used for arguments. Though occasionally used for options/flags.
+	Suffix          []string // List of allowed parameter suffixes. Mostly used for options with no prefix.
 	Summery         string   // The short description to display to the user
 	value           string   // The actual value of the parameter given
-	valueRequired   bool     // Defines if this parameter's value is required when the parameter is used
 	valueSet        bool     // The flag was set or actual value of the parameter was given
+	valueType       string   // The type of value to convert the command line value too
+}
+
+// GetFlag is a NO-OP that will panic for this parameter type
+func (p Parameter) GetFlag() bool {
+	log.Println("Parameter.GetFlag()")
+	panic("SetDefault use not appropriate for this parameter type")
+}
+
+// GetHelp returns the help info for the parameter
+func (p Parameter) GetHelp() string {
+	log.Println("Parameter.GetHelp()")
+	return p.help
+}
+
+// GetInt returns the value as a system integer
+func (p Parameter) GetInt() (int, error) {
+	log.Println("Parameter.GetInt()")
+	i, err := strconv.Atoi(p.value)
+	return i, err
+}
+
+// GetName returns the parameters names available on the command line
+func (p Parameter) GetName() []string {
+	log.Println("Parameter.GetName()")
+	return p.Name
+}
+
+// GetNumber returns the value as a float64
+func (p Parameter) GetNumber() (float64, error) {
+	log.Println("Parameter.GetNumber()")
+	i, err := strconv.ParseFloat(p.value, 64)
+	return i, err
+}
+
+// GetPrefix returns the valid values for to prefix the parameter names
+func (p Parameter) GetPrefix() []string {
+	log.Println("Parameter.GetPrefix()")
+	return p.Prefix
+}
+
+// GetUint returns the value as a system unsigned integer
+func (p Parameter) GetUint() (uint, error) {
+	log.Println("Parameter.GetUint()")
+	i, err := strconv.ParseUint(p.value, 10, intSize)
+	// ui := uint(i)
+	return uint(i), err
+}
+
+// GetValue returns the current value for the parameter
+func (p Parameter) GetValue() (string, error) {
+	log.Println("Parameter.GetValue()")
+	if p.valueSet == false {
+		if p.defaultSet {
+			if p.configPreferred && len(p.configDefault) > 0 {
+				p.value = p.configDefault
+			} else if len(p.envDefault) > 0 {
+				p.value = p.envDefault
+			} else {
+				p.value = p.configDefault
+			}
+		} else {
+			return "", errors.New(ErrorOptionMissing)
+		}
+	}
+	return p.value, nil
+}
+
+// SetDefault is a NO-OP that will panic for this parameter type
+func (p Parameter) SetDefault(s string) error {
+	log.Println("Parameter.SetDefault()")
+	panic("SetDefault use not appropriate for this parameter type")
+	return nil
+}
+
+// SetFlag is a NO-OP that will panic for this parameter type
+func (p Parameter) SetFlag() {
+	log.Println("Parameter.SetFlag()")
+	panic("SetFlag use not appropriate for this parameter type")
+}
+
+// SetKey defines the key name to reference in code
+func (p Parameter) SetKey(s string) error {
+	log.Println("Parameter.SetKey()")
+	if len(s) == 0 {
+		return errors.New(ErrorKeyLengthZero)
+	}
+	p.Key = s
+	return nil
+}
+
+// SetPrefix allows for alternate or custom prefixes to be used. Default prefix is a hyphen.
+func (p Parameter) SetPrefix(list []string, appendToList bool) {
+	log.Println("Parameter.SetPrefix()")
+	if appendToList {
+		for _, v := range list {
+			p.Prefix = append(p.Prefix, v)
+		}
+	} else {
+		p.Prefix = list
+	}
+}
+
+// SetName defines the parameter name(s) allowed on the command line
+func (p Parameter) SetName(s []string) error {
+	log.Println("Parameter.SetName()")
+	for _, v := range s {
+		name := strings.TrimSpace(v)
+		if len(name) == 0 {
+			return errors.New(ErrorNameLengthZero)
+		}
+	}
+	p.Name = s
+	return nil
+}
+
+// SetValue defines the command line value given
+func (p Parameter) SetValue(s string) {
+	log.Println("Parameter.SetValue()")
+	p.value = s
+	p.valueSet = true
+}
+
+// SetRequired defines the parameter as required input. Errors if not present on the command line.
+func (p Parameter) SetRequired(b bool) {
+	log.Println("Parameter.SetRequired()")
+	p.IsRequired = b
 }
 
 /*

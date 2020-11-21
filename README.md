@@ -5,6 +5,14 @@ CLIOPATra
 
 This is not meant as a complete CLI solution. It is mostly a parser and API for building CLI tools.
 
+
+
+ToDo
+----
+
+* [ ] Callback API when a required option isn't presented on the command line
+
+
 MIT License
 Copyright &copy; 2020 RuneImp
 
